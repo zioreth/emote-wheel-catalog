@@ -2,6 +2,12 @@
 
 Este repositorio aloja **solo las adiciones al catálogo integrado** de Emote Wheel. No contiene claves de GW2 ni ruedas personales.
 
+## Estado verificado el 10 de octubre de 2026
+
+La publicación del catálogo funciona. La API responde desde GitHub Actions, pero la wiki devuelve HTTP 403 desde esos servidores. La incidencia #1 registra este bloqueo. El monitor sigue comprobando la API; **no se puede considerar completa la detección mientras la wiki permanezca inaccesible**. No se usan proxies ni mecanismos para eludir el rechazo. Hace falta que la wiki permita ese acceso para completar esa fuente.
+
+La prueba local de ambas fuentes funcionó sin novedades. Esto no demuestra que la consulta desde GitHub esté permitida. La incidencia se cerrará cuando la ejecución programada pueda consultar ambas fuentes correctamente.
+
 ## Funcionamiento
 
 - **Discover emotes** consulta la API pública y la tabla de emotes de la wiki a las 13:17 UTC (08:17 Colombia), o manualmente desde Actions. GitHub puede retrasar ejecuciones programadas.
