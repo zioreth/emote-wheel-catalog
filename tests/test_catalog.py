@@ -33,7 +33,7 @@ class Tests(unittest.TestCase):
  def test_notification_deduplication(self):
   class GH:
    def __init__(self):self.calls=[]
-   def pages(self,path):return [{'number':1,'body':'<!-- emote-wheel-monitor-health -->'}]
+   def pages(self,path):return [{'number':1,'body':'<!-- emote-wheel-monitor-health-discovery -->'}]
    def call(self,*args):self.calls.append(args)
   gh=GH();catalog.failure_issue(gh,['API failed']);self.assertFalse(gh.calls)
   catalog.failure_issue(gh,[]);self.assertEqual(gh.calls[0][2]['state'],'closed')
@@ -44,5 +44,21 @@ class Tests(unittest.TestCase):
  def test_proposal_never_approved(self):
   value=catalog.proposal('newemote');self.assertFalse(value['Reviewed'])
   with self.assertRaises(ValueError):catalog.validate(value)
+
+ def test_closed_proposal_is_not_recreated(self):
+  class GH:
+   def call(self,path,*args):return {'default_branch':'main'}
+   def pages(self,path):return [{'head':{'ref':'catalog/newgesture'}}] if path.startswith('/pulls') else []
+   def ensure_branch(self,*args):raise AssertionError('Must not recreate a rejected proposal')
+  with patch.object(catalog,'fetch',return_value=b'{"parse":{"text":{"*":""}}}'),patch.object(catalog,'api_commands',return_value={'newgesture':None}),patch.object(catalog,'wiki_commands',return_value=set()),patch.object(catalog,'GitHub',return_value=GH()):
+   self.assertEqual(catalog.discover(True)['candidates'],['newgesture'])
+ def test_publication_refuses_removal(self):
+  class GH:
+   def call(self,path,*args):
+    if not path:return {'default_branch':'main'}
+    return {'content':base64.b64encode(json.dumps({'Entries':[{'Command':'existing'}],'Revision':1}).encode()).decode()}
+   def ensure_branch(self,*args):pass
+  with patch.object(catalog,'GitHub',return_value=GH()),patch.object(catalog,'entries',return_value=[]):
+   with self.assertRaises(ValueError):catalog.publish()
 
 if __name__=='__main__':unittest.main()

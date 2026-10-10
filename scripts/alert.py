@@ -1,2 +1,3 @@
 from catalog import GitHub, failure_issue
-failure_issue(GitHub(), ['Falló un proceso de detección o publicación. Revisa Actions; no se ha publicado un catálogo inválido.'])
+import os
+failure_issue(GitHub(), ["Falló el proceso. Revisa Actions; el catálogo publicado permanece intacto."], kind="publication" if os.environ.get("GITHUB_WORKFLOW","").startswith("Publish") else "discovery")

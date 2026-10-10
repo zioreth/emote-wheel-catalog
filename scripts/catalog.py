@@ -140,8 +140,8 @@ def notify_mention():
     return '@'+user+'\n\n' if re.fullmatch(r'[A-Za-z0-9-]{1,39}',user) else ''
 
 
-def failure_issue(github, errors):
-    marker='<!-- emote-wheel-monitor-health -->'
+def failure_issue(github, errors, kind="discovery"):
+    marker='<!-- emote-wheel-monitor-health-'+kind+' -->'
     issues=github.pages('/issues?state=open')
     existing=next((i for i in issues if marker in (i.get('body') or '')),None)
     if errors and existing is None:
@@ -205,7 +205,8 @@ def publish():
         old=json.loads(base64.b64decode(github.call('/contents/catalog.json?ref=published')['content']))
     except HTTPError as error:
         if error.code!=404:raise
-    if old and old.get('Entries')==values:return
+    if old and old.get('Entries')==values:
+        failure_issue(github,[],kind='publication');return
     if old:
         previous={e['Command']:e for e in old['Entries']}
         current={e['Command']:e for e in values}
@@ -214,6 +215,7 @@ def publish():
     data=(json.dumps(payload,ensure_ascii=False,indent=2)+'\n').encode()
     if len(data)>MAX_BYTES:raise ValueError('Published catalog exceeds client size limit')
     github.put_file('published','catalog.json',data,'Publicar catálogo aprobado')
+    failure_issue(github,[],kind='publication')
     print('https://raw.githubusercontent.com/'+github.repo+'/published/catalog.json')
 
 
