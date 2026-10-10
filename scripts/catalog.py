@@ -17,7 +17,7 @@ MAX_BYTES = 2097152
 
 
 def fetch(url, *, token=None, method='GET', payload=None, limit=MAX_BYTES):
-    headers = {'User-Agent':'EmoteWheelCatalog/0.2', 'Accept':'application/json'}
+    headers = {'User-Agent':'EmoteWheelCatalog/0.2 (https://github.com/zioreth/emote-wheel-catalog; contact: GitHub issues)', 'Accept':'application/json'}
     if token:
         headers.update(Authorization='Bearer '+token, **{'X-GitHub-Api-Version':'2022-11-28'})
     body = json.dumps(payload).encode() if payload is not None else None
@@ -176,7 +176,7 @@ def discover(live=False):
     try:
         html=json.loads(fetch(WIKI_API,limit=8*MAX_BYTES))['parse']['text']['*']
         for command in wiki_commands(html,known):found.setdefault(command,None)
-    except Exception as error:errors.append('Wiki: '+type(error).__name__)
+    except Exception as error:errors.append('Wiki: '+type(error).__name__+(' HTTP '+str(error.code) if isinstance(error,HTTPError) else ''))
     candidates=sorted(set(found)-known)
     report={'candidates':candidates,'errors':errors,'sources':[API,WIKI]}
     print(json.dumps(report,ensure_ascii=False,indent=2))
@@ -193,7 +193,9 @@ def discover(live=False):
         body=notify_mention()+'Detectado `/'+command+'`. Propuesta pendiente de revisión; no se publicará automáticamente.\n\n- [ ] Confirmar comando, nombre, categoría y desbloqueo.\n- [ ] Revisar traducciones e ícono (ImagePng).\n- [ ] Cambiar Reviewed a true y ejecutar Validate manualmente en esta rama.\n- [ ] Fusionar para publicar, o cerrar para descartar.\n\nFuentes:\n'+'\n'.join(value['Sources'])+'\n\nSi falta el ícono, usa `python scripts/catalog.py icon entries/'+command+'.json ruta/al/icono.png`. La cuenta GitHub Actions no genera por sí misma imágenes nuevas.'
         github.call('/pulls','POST',{'title':'Revisar nuevo emote: /'+command,'head':branch,'base':default,'body':body})
     failure_issue(github,errors)
-    if errors:raise RuntimeError('One or more discovery sources failed; health issue recorded')
+    if errors:
+        (ROOT/'.health-reported').touch()
+        raise RuntimeError('One or more discovery sources failed; health issue recorded')
     return report
 
 
