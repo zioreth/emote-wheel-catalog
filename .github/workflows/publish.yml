@@ -1,0 +1,32 @@
+name: Publish approved catalog
+on:
+  push:
+    branches: [main]
+    paths: ['entries/**', 'scripts/**', '.github/workflows/publish.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+  issues: write
+concurrency:
+  group: catalog-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m unittest discover -s tests -v
+      - run: python scripts/catalog.py validate
+      - run: python scripts/catalog.py publish
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - if: failure()
+        run: python scripts/alert.py
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REVIEWER: ${{ vars.REVIEWER || github.repository_owner }}
