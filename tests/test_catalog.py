@@ -73,7 +73,8 @@ class Tests(unittest.TestCase):
   with tempfile.TemporaryDirectory() as directory:
    root=Path(directory);(root/'baseline.json').write_text('[]');(root/'entries').mkdir()
    with patch.object(catalog,'ROOT',root),patch.object(catalog,'fetch',side_effect=fetch),patch.object(catalog,'api_commands',return_value={}),patch.object(catalog,'GitHub',return_value=GH()),patch.object(catalog,'failure_issue') as notify:
-    result=catalog.discover(True)
+    with patch.dict(catalog.os.environ,{'GITHUB_STEP_SUMMARY':''}),patch('builtins.print'):
+     result=catalog.discover(True)
     self.assertEqual(result['status'],'partial');notify.assert_called_once()
     self.assertEqual(notify.call_args.args[1],['Wiki: HTTPError HTTP 403'])
  def test_other_failures_still_fail(self):
