@@ -61,4 +61,29 @@ class Tests(unittest.TestCase):
   with patch.object(catalog,'GitHub',return_value=GH()),patch.object(catalog,'entries',return_value=[]):
    with self.assertRaises(ValueError):catalog.publish()
 
+ def test_only_wiki_403_is_partial(self):
+  import tempfile
+  from urllib.error import HTTPError
+  class GH:
+   def call(self,path,*args):return {'default_branch':'main'}
+   def pages(self,path):return []
+  def fetch(url,**kwargs):
+   if url==catalog.API:return b'[]'
+   raise HTTPError(url,403,'Forbidden',{},None)
+  with tempfile.TemporaryDirectory() as directory:
+   root=Path(directory);(root/'baseline.json').write_text('[]');(root/'entries').mkdir()
+   with patch.object(catalog,'ROOT',root),patch.object(catalog,'fetch',side_effect=fetch),patch.object(catalog,'api_commands',return_value={}),patch.object(catalog,'GitHub',return_value=GH()),patch.object(catalog,'failure_issue') as notify:
+    result=catalog.discover(True)
+    self.assertEqual(result['status'],'partial');notify.assert_called_once()
+    self.assertEqual(notify.call_args.args[1],['Wiki: HTTPError HTTP 403'])
+ def test_other_failures_still_fail(self):
+  import tempfile
+  class GH:
+   def call(self,path,*args):return {'default_branch':'main'}
+   def pages(self,path):return []
+  with tempfile.TemporaryDirectory() as directory:
+   root=Path(directory);(root/'baseline.json').write_text('[]');(root/'entries').mkdir()
+   with patch.object(catalog,'ROOT',root),patch.object(catalog,'fetch',side_effect=OSError('offline')),patch.object(catalog,'GitHub',return_value=GH()),patch.object(catalog,'failure_issue'):
+    with self.assertRaises(RuntimeError):catalog.discover(True)
+
 if __name__=='__main__':unittest.main()

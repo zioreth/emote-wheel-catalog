@@ -195,7 +195,16 @@ def discover(live=False):
     failure_issue(github,errors)
     if errors:
         (ROOT/'.health-reported').touch()
+        if errors == ['Wiki: HTTPError HTTP 403']:
+            report['status']='partial'
+            message='Cobertura parcial: la API respondió; la wiki sigue bloqueada (HTTP 403). La incidencia permanece abierta. No se confirma ausencia de emotes nuevos fuera de la API.'
+            print('::warning title=Cobertura parcial del catálogo::'+message)
+            if os.environ.get('GITHUB_STEP_SUMMARY'):
+                with open(os.environ['GITHUB_STEP_SUMMARY'],'a',encoding='utf-8') as summary:
+                    summary.write('## Cobertura parcial\n\n'+message+'\n\nPropuestas detectadas: '+str(len(candidates))+'\n')
+            return report
         raise RuntimeError('One or more discovery sources failed; health issue recorded')
+    report['status']='complete'
     return report
 
 

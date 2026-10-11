@@ -8,6 +8,10 @@ La publicación del catálogo funciona. La API responde desde GitHub Actions, pe
 
 La prueba local de ambas fuentes funcionó sin novedades. Esto no demuestra que la consulta desde GitHub esté permitida. La incidencia se cerrará cuando la ejecución programada pueda consultar ambas fuentes correctamente.
 
+## Ajuste de avisos — 11 de octubre de 2026
+
+Si la API responde y la única incidencia es el HTTP 403 conocido de la wiki, la ejecución termina con una advertencia y un resumen de **cobertura parcial**. No lanza un fallo repetido que genere correos de Actions. La incidencia permanece abierta. Cualquier otro fallo sigue terminando con error; la recuperación completa cierra la incidencia. Las acciones usan Node.js 24 y Ubuntu 24.04 fijo.
+
 ## Funcionamiento
 
 - **Discover emotes** consulta la API pública y la tabla de emotes de la wiki a las 13:17 UTC (08:17 Colombia), o manualmente desde Actions. GitHub puede retrasar ejecuciones programadas.
